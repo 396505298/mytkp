@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title></title>
+		<meta charset="utf-8">
+		<link type="text/css" rel="stylesheet" href="../../../Public/jquery-easyui-1.3.3/themes/bootstrap/easyui.css">
+		<link type="text/css" rel="stylesheet" href="../../../Public/jquery-easyui-1.3.3/themes/icon.css">
+		<script type="text/javascript" src="../../../Public/jquery-easyui-1.3.3/jquery.min.js"></script>
+		<script type="text/javascript" src="../../../Public/jquery-easyui-1.3.3/jquery.easyui.min.js"></script>
+		<script type="text/javascript" src="../../../Public/jquery-easyui-1.3.3/locale/easyui-lang-zh_CN.js"></script>
+		<style type="text/css">
+        #fortable{
+	        width: 60%;
+	        margin:auto;
+	        margin-top:20px;
+        }
+        #fortable tr{
+            height:40px;	
+        }
+        </style>
+		<script type="text/javascript">
+		$(function(){
+			$('#win').window('close');
+			
+			//创建的table
+            $('#dg').datagrid({ 
+    		    url:'http://localhost:8080/mytkp/index.php/Home/User/loadUser/pageNo/1/pageSize/10', 
+    		    striped:true, 
+    		    method:"GET",
+    		    fitColumns:true, 
+    		    pagination:true, 
+    		    rownumbers:true,
+    		    frozenColumns:[[
+                    {field:'check',checkbox:true}
+    		    ]],
+    		    columns:[[    
+    		        {field:'uid',hidden:true},    
+    		        {field:'userName',title:'账号',width:100,align:'center'},    
+    		        {field:'userPass',title:'密码',width:100,align:'center'},
+    		        {field:'userType',title:'类型',width:100,align:'center',formatter:function(value){
+						if(value==1){
+							return "校长";
+						}else if(value==2){
+							return "班主任";
+						}else if(value==3){
+							return "项目经理";
+						}else if(value==4){
+							return "学员";
+						}
+    		        }},
+    		        {field:'trueName',title:'真实姓名',width:100,align:'center'},
+    		        {field:'sex',title:'性别',width:200,align:'center',formatter:function(value){
+						if(value==1){
+							return "男";
+						}else{
+							return "女";
+						}
+    		        }},
+    		        {field:'phone',title:'手机号',width:100,align:'center'},
+    		        {field:'school',title:'毕业学校',width:200,align:'center'},
+    		        {field:'status',title:'状态',width:100,align:'center',formatter:function(value){
+						if(value==1){
+							return "正常";
+						}else if(value==2){
+							return "休假";
+						}else if(value==3){
+							return "离职";
+						}
+    		        }},
+    		        {field:'isshow',title:'是否在首页显示',width:200,align:'center',formatter:function(value){
+						if(value==0){
+							return "不显示";
+						}else{
+							return "显示";
+						}
+    		        }}   
+    		    ]],
+
+    		    //table内的下拉列表/添加和删除按钮
+    		    toolbar: [{
+    				iconCls: 'icon-add2',
+    				text:'添加',
+    				handler: function(){
+    					$('#ff').form('reset');
+    					$('#win').window('open');
+    				}
+    			},'-',{
+    				iconCls: 'icon-delete',
+    				text:'删除',
+    				handler: function(){
+        				var selectedRows = $("#dg").datagrid("getSelections");
+        				if(selectedRows.length == 0){
+							alert("请选择需要删除行");
+							return;
+        				}
+        				if(window.confirm("你确定要删除选中的数据")){
+            				var uid = new Array();
+							for(var i=0;i<selectedRows.length;i++){
+								uid.push(selectedRows[i].uid);
+							}
+							$.post("http://localhost:8080/mytkp/index.php/Home/User/deleteUser",{"uid":uid.join(",")},function(data){
+								refreshData(1,10);
+							},"text");
+        				}
+    				}
+    			},'-',{
+    				iconCls: 'icon-refresh',
+    				text:'刷新',
+    				handler: function(){
+    					refreshData(1,10);
+    				}
+    			},'-',{
+    				iconCls: 'icon-modify',
+    				text:'修改',
+    				handler: function(){
+    					var selectedRow = $("#dg").datagrid("getSelections");
+    					if(selectedRow.length == 0){
+							alert("请选择需要修改的数据哦");
+							return;
+    					}
+    					if(selectedRow.length > 1){
+							alert("对不起,只能选择一行数据哦");
+							return;
+    					}
+
+    					$('#parentid').combobox({    
+    					    url:'http://localhost:8080/mytkp/index.php/Home/User/load12User',  
+    					    valueField:'uid',    
+    					    textField:'name'   
+    					});
+    					var row = selectedRow[0];
+    					$('#ff').form('reset');
+    					$.post("http://localhost:8080/mytkp/index.php/Home/User/loadUserById?uid="+row.uid,{},function(data){
+    						$("#uid").val(data.uid);
+							$("#userName").val(data.userName);
+							$("#userPass").val(data.userPass);
+							$("#trueName").val(data.trueName);
+// 							$("#phone").val(data.phone);
+							$("#status").val(data.status);
+// 							$("#school").combobox("setValue",data.school);
+// 							$("#userType").combobox("setValue",data.userType);
+// 							$("#sex").combobox("setValue",data.sex);
+    					},"json");
+    					$("#win").window('open');
+    				}
+    			}]
+    		}); 
+    		
+			//翻页功能/翻页工具
+			var pager  = $("#dg").datagrid('getPager');
+			
+			pager.pagination({
+				onSelectPage:function(pageNumber, pageSize){
+					refreshData(pageNumber,pageSize);
+				}
+			});
+
+			$.extend($.fn.validatebox.defaults.rules,{
+				validUserName:{
+					validator:function(value,param){
+						return /^[a-zA-Z]{1}\w{5,11}$/.test(value);
+					},
+					message:'用户名必须由英文字母开头，6-12位英文字母，数字或下划线组成'
+				},
+				validUserPass:{
+					validator:function(value,param){
+						return /^\w{6,12}$/.test(value);
+					},
+					message:'密码由6-12位英文字母，数字或下划线组成'
+				}
+		    });
+		});
+
+		//添加文件
+		function saveOrUpdateUser(){
+			var uid = $("#uid").val();
+			var userName = $("#userName").val();
+			var userPass = $("#userPass").val();
+			var birthDay = $("#birthDay").val();
+			var userType = $("#userType").combo('getValue');
+			var school = $("#school").val();
+			var status = $("#status").combo('getValue');
+			var trueName = $("#trueName").val();
+			var sex = $("#sex").combo('getValue');
+			var phone = $("#phone").val();
+			$.post('http://localhost:8080/mytkp/index.php/Home/User/saveOrUpdateUser',{
+				"uid"		: uid,
+				"userName"	: userName,
+				"userPass"	: userPass,
+				"userType"	: userType,
+				"trueName"	: trueName,
+				"school"	: school,
+				"sex"		: sex,
+				"phone"		: phone,
+				"status"	: status,
+				"birthDay"	: birthDay
+			},function(data){
+				if(data=="insertOK"){
+					$.messager.alert('消息','添加成功！','info',function(){
+    					refreshData(1,10);
+    					$('#win').window('close');
+    					$('#ff').form('reset'); 
+					});
+				}else if(data=="updateOK"){
+					$.messager.alert('消息','修改成功！','info',function(){
+    					refreshData(1,10);
+    					$('#win').window('close');
+    					$('#ff').form('reset');
+					});
+				}
+			},"text");
+		}
+
+
+		function refreshData(pageNumber,pageSize){
+			$("#dg").datagrid('loading');
+    //			alert('pageNumber:'+pageNumber+',pageSize:'+pageSize);
+    		$.getJSON("http://localhost:8080/mytkp/index.php/Home/User/loadUser?pageNo="+pageNumber+"&pageSize="+pageSize,{},function(data){
+    			$("#dg").datagrid('loadData',{
+    				rows:data.rows,
+    				total:data.total
+    			});
+    			var pager  = $("#dg").datagrid('getPager');
+    			
+    			pager.pagination({
+    				pageSize:pageSize,
+    				pageNumber:pageNumber
+    			});
+    			$("#dg").datagrid('loaded');
+    		});
+		}
+		</script>
+	</head>
+	<body>
+		<table id="dg">
+			
+		</table>
+		<div id="win" class="easyui-window" title="添加菜单" style="width:600px;height:400px"   
+        	data-options="iconCls:'icon-add2',modal:true,collapsible:false,minimizable:false,maximizable:false,resizable:false">   
+        	
+        	<form id="ff" method="post"> 
+        		<input type="hidden" id="uid" name="uid"/>
+        		<table id="fortable">
+        			<tr>
+        				<td align="right"><label for="userName">账号:</label></td>
+        				<td><input class="easyui-validatebox" type="text" id="userName" name="userName" data-options="required:true,validType:'validUserName'" placeholder="请输入账号"/></td>
+        			</tr>
+        			<tr>
+        				<td align="right"><label for="userPass">密码:</label></td>
+        				<td><input class="easyui-validatebox" type="text" id="userPass" name="userPass" data-options="required:true,validType:'validUserPass'" data-options="required:true" placeholder="请输入密码"/></td>
+        			</tr>
+        			<tr>
+        				<td align="right"><label for="trueName">真实姓名:</label></td>
+        				<td><input class="easyui-validatebox" type="text" id="trueName" name="trueName" data-options="required:true" placeholder="请输入真实姓名"/></td>
+        			</tr>
+        			<tr>
+        				<td align="right"><label for="userType">权限设置:</label></td>
+        				<td>
+        					<select id="userType" name="userType" style="width:150px;" class="easyui-combobox">
+        						<option value=2>班主任</option>
+        						<option value=3>项目经理</option>
+        					</select>
+        				</td>
+        			</tr>
+        			<tr>
+        				<td align="right"><label for="birthDay">生日:</label></td>
+        				<td><input class="easyui-datebox" type="text" id="birthDay" name="birthDay" data-options=""  placeholder="请输入生日"/></td>
+        			</tr>
+        			<tr>
+        				<td align="right"><label for="school">毕业院校:</label></td>
+        				<td><input class="easyui-validatebox" type="text" id="school" name="school" data-options=""  placeholder="请输入毕业学校"/></td>
+        			</tr>
+        			<tr>
+        				<td align="right"><label for="sex">性别:</label></td>
+        				<td>
+        					<select id="sex" name="sex" style="width:150px;" class="easyui-combobox">
+        						<option value=1>男</option>
+        						<option value=0>女</option>
+        					</select>
+        				</td>
+        			</tr>
+        			<tr>
+        				<td align="right"><label for="status">状态:</label></td>
+        				<td>
+        					<select id="status" name="status" style="width:150px;" class="easyui-combobox">
+        						<option value=1>正常</option>
+        						<option value=2>休假</option>
+        						<option value=3>停职</option>
+        					</select>
+        				</td>
+        			</tr>
+        			<tr>
+        				<td align="right"><label for="phone">手机号:</label></td>
+        				<td><input class="easyui-validatebox" type="text" id="phone" name="phone" data-options=""  placeholder="请输入手机号"/></td>
+        			</tr>
+        			<tr>
+        				<td align="center" colspan="2">
+        					<a id="btn" href="javascript:saveOrUpdateUser();" class="easyui-linkbutton" data-options="iconCls:'icon-submit'">提交</a>
+        				</td>
+        			</tr>
+        		</table>  
+            </form> 
+        	        
+        </div> 
+		
+	</body>
+</html>

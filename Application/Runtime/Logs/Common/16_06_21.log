@@ -1,0 +1,6 @@
+[ 2016-06-21T08:42:27+08:00 ] 127.0.0.1 /mytkp/index.php/index.php
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.001000s ]
+INFO: [ app_init ] --END-- [ RunTime:0.004000s ]
+ERR: 无法加载模块:Index
+

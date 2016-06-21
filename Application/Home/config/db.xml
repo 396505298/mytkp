@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<datasources xmlns="http://www.yy.org/db" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.yy.org/db db.xsd">
+	<database>
+		<dsn>mysql:host=localhost;dbname=sys</dsn>
+		<username>root</username>
+		<userpass>921129</userpass>
+	</database>
+</datasources>
